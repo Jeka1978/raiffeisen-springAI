@@ -29,6 +29,14 @@ public class Chat {
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinColumn(name = "chat_id")
+    @OrderBy("createdAt DESC ")
     private List<ChatEntry> history;
 
+    public void addEntry(String prompt, Role role) {
+        history.add(ChatEntry.builder().content(prompt).role(role).build());
+    }
+
+    public void addEntry(ChatEntry chatEntry) {
+        history.add(chatEntry);
+    }
 }
