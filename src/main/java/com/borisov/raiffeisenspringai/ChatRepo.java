@@ -12,36 +12,5 @@ import java.util.List;
 
 @Repository
 @Primary
-public interface ChatRepo extends JpaRepository<Chat, Long>, ChatMemoryRepository {
-    @Override
-    default List<String> findConversationIds() {
-        return findAll()
-                .stream()
-                .map(Chat::getId)
-                .map(String::valueOf)
-                .toList();
-    }
-
-    @Override
-    default List<Message> findByConversationId(String conversationId) {
-        Chat chat = findById(Long.valueOf(conversationId)).orElseThrow();
-        return chat.getHistory().stream()
-                .map(ChatEntry::toMessage)
-                .toList();
-
-    }
-
-    @Override
-    default void saveAll(String conversationId, List<Message> messages) {
-        Chat chat = findById(Long.valueOf(conversationId)).orElseThrow();
-        messages.stream()
-                .map(ChatEntry::fromMessage)
-                .forEach(chat::addEntry);
-        save(chat);
-    }
-
-    @Override
-   default void deleteByConversationId(String conversationId){
-        //not implemented NEVER
-    }
+public interface ChatRepo extends JpaRepository<Chat, Long> {
 }

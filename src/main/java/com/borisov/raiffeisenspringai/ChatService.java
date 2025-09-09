@@ -19,6 +19,7 @@ import java.util.List;
 import static com.borisov.raiffeisenspringai.model.Role.ASSISTANT;
 import static com.borisov.raiffeisenspringai.model.Role.USER;
 
+
 @Service
 public class ChatService {
 

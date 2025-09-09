@@ -11,6 +11,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.Ordered;
 import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication
@@ -24,21 +25,23 @@ public class RaiffeisenSpringAiApplication {
         return builder.defaultOptions(
                 OllamaOptions.builder().topP(0.7).topK(20).repeatPenalty(1.1).temperature(0.3).build())
                 .defaultAdvisors(
-                        getHistoryAdvisor(),
-                        SimpleLoggerAdvisor.builder().responseToString().build())
+                        SimpleLoggerAdvisor.builder().order(1).build(),
+                        getHistoryAdvisor(2),
+                        SimpleLoggerAdvisor.builder().order(3).build())
 
                 .build();
 
     }
 
 
-    private  MessageChatMemoryAdvisor getHistoryAdvisor() {
+    private  MessageChatMemoryAdvisor getHistoryAdvisor(int order) {
         return MessageChatMemoryAdvisor.builder(
                 PostgresChatMemory.builder()
                         .chatMemoryRepository(chatRepo)
                         .maxMessages(4)
+
                         .build()
-        ).build();
+        ).order(order).build();
     }
 
 
@@ -50,5 +53,8 @@ public class RaiffeisenSpringAiApplication {
 //        String answer = chatClient.prompt("дай первую строчку Bohemian Rhapsody").call().content();
 //        System.out.println(answer);
     }
+
+
+
 
 }
