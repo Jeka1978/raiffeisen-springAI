@@ -50,7 +50,7 @@ public class ChatService {
     public void proceedInteraction(long chatId, String prompt) {
 
         myProxy.addChatEntry(chatId, prompt, USER);
-        String answer = chatClient.prompt().user(prompt).call().content();
+        String answer = chatClient.prompt().user(prompt).advisors().call().content();
         myProxy.addChatEntry(chatId, answer, ASSISTANT);
     }
 

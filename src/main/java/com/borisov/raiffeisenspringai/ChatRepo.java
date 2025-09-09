@@ -12,7 +12,7 @@ import java.util.List;
 
 @Repository
 @Primary
-public interface ChatRepo extends JpaRepository<Chat, Long> {
+public interface ChatRepo extends JpaRepository<Chat, Long>, ChatMemoryRepository {
     @Override
     default List<String> findConversationIds() {
         return findAll()

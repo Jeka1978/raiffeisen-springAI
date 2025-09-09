@@ -7,7 +7,6 @@ import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.ollama.api.OllamaOptions;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -17,19 +16,16 @@ import org.springframework.web.client.RestTemplate;
 @SpringBootApplication
 public class RaiffeisenSpringAiApplication {
 
-    @Value("${max}")
-    private long max;
-
     @Autowired
     private ChatRepo chatRepo;
 
     @Bean
     public ChatClient chatClient(ChatClient.Builder builder) {
         return builder.defaultOptions(
-                OllamaOptions.builder().topP(0.9).topK(40).repeatPenalty(1.1).temperature(0.7).build())
+                OllamaOptions.builder().topP(0.7).topK(20).repeatPenalty(1.1).temperature(0.3).build())
                 .defaultAdvisors(
                         getHistoryAdvisor(),
-                        SimpleLoggerAdvisor.builder().build())
+                        SimpleLoggerAdvisor.builder().responseToString().build())
 
                 .build();
 
@@ -38,9 +34,9 @@ public class RaiffeisenSpringAiApplication {
 
     private  MessageChatMemoryAdvisor getHistoryAdvisor() {
         return MessageChatMemoryAdvisor.builder(
-                PosgressChatMemoryRepository.builder()
+                PostgresChatMemory.builder()
                         .chatMemoryRepository(chatRepo)
-                        .maxMessages(max)
+                        .maxMessages(4)
                         .build()
         ).build();
     }
