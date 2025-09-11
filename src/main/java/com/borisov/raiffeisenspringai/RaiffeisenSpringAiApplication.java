@@ -5,8 +5,7 @@ import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
-import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.memory.MessageWindowChatMemory;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.ollama.api.OllamaOptions;
 import org.springframework.ai.vectorstore.SearchRequest;
@@ -16,8 +15,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.Ordered;
-import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication
 public class RaiffeisenSpringAiApplication {
@@ -28,8 +25,20 @@ public class RaiffeisenSpringAiApplication {
     @Autowired
     private VectorStore vectorStore;
 
+    @Autowired
+    private ChatModel chatModel;
 
-    private static final PromptTemplate MY_PROMPT_TEMPLATE = new PromptTemplate( "{query}\n\n" +"Контекст:\n" + "---------------------\n" + "{question_answer_context}\n" + "---------------------\n\n" + "Отвечай только на основе контекста выше. Если информации нет в контексте, сообщи, что не можешь ответить." );
+
+    private static final PromptTemplate MY_PROMPT_TEMPLATE = new PromptTemplate(
+            "{query}\n\n" +
+                    "---------------------\n" +
+                    "{question_answer_context}\n" +
+                    "---------------------\n\n" +
+                    "Если ответ есть в тексте — напиши его. " +
+                    "Если ответа в тексте нет, сначала напиши: \"Вообще-то я тут не за этим, но могу ответить.\" " +
+                    "Потом — обязательно ответь на вопрос. " +
+                    "Максимум два коротких предложения."
+    );
 
 
 
@@ -38,6 +47,7 @@ public class RaiffeisenSpringAiApplication {
         return builder.defaultOptions(
                         OllamaOptions.builder().topP(0.7).topK(20).repeatPenalty(1.1).temperature(0.3).build())
                 .defaultAdvisors(
+                        getPaceAdvisor(0),
                         SimpleLoggerAdvisor.builder().order(1).build(),
                         getHistoryAdvisor(2),
                         getRagAdvisor(3),
@@ -46,12 +56,18 @@ public class RaiffeisenSpringAiApplication {
 
     }
 
+    private Advisor getPaceAdvisor(int order) {
+        return ExpansionQueryAdvisor.builder(chatModel)
+                .order(order)
+                .build();
+    }
+
     private Advisor getRagAdvisor(int order) {
         QuestionAnswerAdvisor questionAnswerAdvisor = QuestionAnswerAdvisor.builder(vectorStore)
                 .promptTemplate(MY_PROMPT_TEMPLATE)
                 .order(order)
                 .searchRequest(SearchRequest.builder()
-                        .similarityThreshold(0.5)
+                        .similarityThreshold(0.63)
                         .topK(4)
                         .build())
                 .build();
