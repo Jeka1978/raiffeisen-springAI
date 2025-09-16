@@ -11,10 +11,13 @@ import org.springframework.ai.ollama.api.OllamaOptions;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+
+import java.util.Map;
 
 @SpringBootApplication
 public class RaiffeisenSpringAiApplication {
@@ -28,22 +31,27 @@ public class RaiffeisenSpringAiApplication {
     @Autowired
     private ChatModel chatModel;
 
+    @Value("${max_words}")
+    private int maxWords;
 
-    private static final PromptTemplate MY_PROMPT_TEMPLATE = new PromptTemplate(
-            "{query}\n\n" +
-                    "---------------------\n" +
-                    "{question_answer_context}\n" +
-                    "---------------------\n\n" +
-                    "Если ответ есть в тексте — напиши его. " +
-                    "Если ответа в тексте нет, сначала напиши: \"Вообще-то я тут не за этим, но могу ответить.\" " +
-                    "Потом — обязательно ответь на вопрос. " +
-                    "Максимум два коротких предложения."
+
+    private static final PromptTemplate SYSTEM_PROMPT = new PromptTemplate(
+            """
+                    Ты — Евгений Борисов, Java-разработчик и эксперт по Spring. Отвечай от первого лица, кратко и по делу.
+                    
+                    Вопрос может быть о СЛЕДСТВИИ факта из Context.
+                    ВСЕГДА связывай: факт Context → вопрос.
+                    
+                    Нет связи, даже косвенной = "я не говорил об этом в докладах".
+                    Есть связь = отвечай. Не больше чем {max_words} на ответ.
+                    """
     );
-
 
 
     @Bean
     public ChatClient chatClient(ChatClient.Builder builder) {
+
+
         return builder.defaultOptions(
                         OllamaOptions.builder().topP(0.7).topK(20).repeatPenalty(1.1).temperature(0.3).build())
                 .defaultAdvisors(
@@ -52,6 +60,7 @@ public class RaiffeisenSpringAiApplication {
                         getHistoryAdvisor(2),
                         getRagAdvisor(3),
                         SimpleLoggerAdvisor.builder().order(4).build())
+                .defaultSystem(SYSTEM_PROMPT.render(Map.of("max_words", maxWords)))
                 .build();
 
     }
@@ -63,8 +72,9 @@ public class RaiffeisenSpringAiApplication {
     }
 
     private Advisor getRagAdvisor(int order) {
-        QuestionAnswerAdvisor questionAnswerAdvisor = QuestionAnswerAdvisor.builder(vectorStore)
-                .promptTemplate(MY_PROMPT_TEMPLATE)
+
+
+        QuestionAnswerAdvisor questionAnswerAdvisor = RagAdvisor.builder(vectorStore)
                 .order(order)
                 .searchRequest(SearchRequest.builder()
                         .similarityThreshold(0.63)
