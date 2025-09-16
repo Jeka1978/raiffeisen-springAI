@@ -48,8 +48,10 @@ public class RagAdvisor implements BaseAdvisor {
     public ChatClientRequest before(ChatClientRequest chatClientRequest, AdvisorChain advisorChain) {
         String originalUserQuery = chatClientRequest.prompt().getUserMessage().getText();
         String queryToRag = chatClientRequest.context().getOrDefault(EXPANSION_QUERY, originalUserQuery).toString();
-        SearchRequest searchRequest = SearchRequest.builder().topK(topK).similarityThreshold(similarity).query(queryToRag).build();
+        SearchRequest searchRequest = SearchRequest.builder().topK(topK*2).similarityThreshold(similarity).query(queryToRag).build();
         List<Document> documents = vectorStore.similaritySearch(searchRequest);
+        BM25RerankEngine bm25RerankEngine = BM25RerankEngine.builder().build();
+        documents = bm25RerankEngine.rerank(documents,queryToRag,topK);
         String llmContext = documents.stream().map(Document::getText).collect(Collectors.joining(System.lineSeparator()));
         String finalUserPrompt = template.render(Map.of("context", llmContext, "question", originalUserQuery));
 
