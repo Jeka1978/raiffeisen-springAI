@@ -43,7 +43,7 @@ public class RaiffeisenSpringAiApplication {
                     ВСЕГДА связывай: факт Context → вопрос.
                     
                     Нет связи, даже косвенной = "я не говорил об этом в докладах".
-                    Есть связь = отвечай. Не больше чем {max_words} на ответ.
+                    Есть связь = отвечай. Не больше чем {max_words} слов на ответ.
                     """
     );
 
@@ -74,12 +74,10 @@ public class RaiffeisenSpringAiApplication {
     private Advisor getRagAdvisor(int order) {
 
 
-        QuestionAnswerAdvisor questionAnswerAdvisor = RagAdvisor.builder(vectorStore)
+        RagAdvisor questionAnswerAdvisor = RagAdvisor.builder(vectorStore)
                 .order(order)
-                .searchRequest(SearchRequest.builder()
-                        .similarityThreshold(0.63)
-                        .topK(4)
-                        .build())
+                .similarity(0.62)
+                .topK(1)
                 .build();
         return questionAnswerAdvisor;
     }

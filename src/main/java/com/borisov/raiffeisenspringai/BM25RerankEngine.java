@@ -1,3 +1,5 @@
+package com.borisov.raiffeisenspringai;
+
 import com.github.pemistahl.lingua.api.Language;
 import com.github.pemistahl.lingua.api.LanguageDetector;
 import com.github.pemistahl.lingua.api.LanguageDetectorBuilder;
